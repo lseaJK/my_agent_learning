@@ -14,17 +14,25 @@ from mint.datatypes import Action
 
 
 class OpenAIFeedbackAgent(OpenAILMAgent):
+    """
+    OpenAI 反馈型 Agent，专用于生成评估或反馈。
+    继承自 OpenAILMAgent，主要用于辅助主流程评测闭环。
+    """
     def __init__(self, config):
         super().__init__(config)
-        # The agent should not generate Assistant msg since it should provide feedback
+        # 反馈 Agent 不应生成 Assistant 消息，只输出反馈内容。
         self.stop_words = ["\nObservation:", "\nTask:", "\nAssistant:"]
         self.feedback_prompt = FeedbackPromptTemplate()
 
     def lm_output_to_action(self, lm_output, form) -> Action:
+        """
+        将模型输出转换为反馈 Action。
+        支持文本型和二元型反馈。
+        """
         if form == "textual":
             feedback = lm_output
         elif form == "binary":
-            # Find the first sentence (as feedback).
+            # 提取首句作为反馈，判断 GOOD/BAD。
             first_sent = re.findall(r"([^.]*\.)", lm_output)[0]
             if "GOOD" in first_sent:
                 feedback = "This is GOOD."

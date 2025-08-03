@@ -11,7 +11,10 @@ LOGGER = logging.getLogger("MINT")
 
 
 class VLLMAgent(OpenAILMAgent):
-    """Inference for open-sourced models with a unified interface with OpenAI's API."""
+    """
+    VLLM 推理 Agent，支持开源模型，接口与 OpenAI API 兼容。
+    继承自 OpenAILMAgent，支持自定义 API 地址和关键字。
+    """
 
     def __init__(self, config):
         super().__init__(config)
@@ -20,7 +23,7 @@ class VLLMAgent(OpenAILMAgent):
         ), "missing openai.api_base to connect to server"
         self.api_base = config["openai.api_base"]
         self.api_key = "EMPTY"
-        LOGGER.info("remember to openup the server using docs/SERVING.mdh")
+        LOGGER.info("记得根据 docs/SERVING.md 启动 VLLM 服务端")
         self.stop_words = [
             "\nObservation:",
             "\nExpert feedback:",
@@ -30,7 +33,10 @@ class VLLMAgent(OpenAILMAgent):
         ]
 
     def format_prompt(self, messages):
-        """Format messages into a prompt for the model."""
+        """
+        格式化多轮对话为 VLLM 模型可用的 prompt。
+        用户消息前加 Human:，助手消息前加 Assistant:。
+        """
         prompt = ""
         for message in messages:
             if message["role"] == "user":

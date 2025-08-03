@@ -22,7 +22,17 @@ PREFIXES = {
 
 
 class AlfWorldTask(Task):
-    """Alfworld task instance."""
+    """
+    AlfWorld 任务类，继承自 Task。
+    用于封装 AlfWorld 环境下的任务实例。
+    属性：
+    - task_name: 任务类型。
+    - id: 任务唯一标识。
+    - prompt: 任务指令。
+    - reference: 参考答案。
+    - env: AlfWorld 环境实例。
+    - task_type: 任务类型字符串。
+    """
 
     task_name = "alfworld"
 
@@ -35,7 +45,16 @@ class AlfWorldTask(Task):
         task_type: str,
         **kwargs,
     ):
-        self.task_name = f"alfworld/{task_type}"  # used to load the correct ICL example
+        """
+        初始化 AlfWorldTask。
+        参数：
+        - id: 任务唯一标识。
+        - prompt: 任务指令。
+        - reference: 参考答案。
+        - env: AlfWorld 环境实例。
+        - task_type: 任务类型字符串。
+        """
+        self.task_name = f"alfworld/{task_type}"  # 用于加载正确的 ICL 示例
         super().__init__(**kwargs)
         self._id = id
         self._prompt = prompt.strip()
@@ -58,6 +77,35 @@ class AlfWorldTask(Task):
         # Task success is checked at the environment level, not at the solution level.
         raise NotImplementedError
 
+
+    """这个函数的作用是加载 AlfWorld 环境中的任务数据，并生成每个任务的 Task 实例。它的主要流程如下：
+
+    1. 读取配置文件：加载 base_config.yaml，获取环境配置。
+
+    2. 选择任务集：根据 split 参数（如 "train" 或 "eval_out_of_distribution"），决定加载哪一部分任务，并确定任务数量。
+
+    3. 初始化环境：根据配置创建并初始化 AlfWorld 环境对象。
+
+    4. 筛选任务：如果提供了 ids_to_run_file，只加载指定的任务。
+
+    任务生成器：
+    - 循环生成每个任务：
+    - 重置环境，获取初始观察和任务信息。
+    - 处理观察文本，提取任务文件路径。
+    - 如果不是训练集，加载任务的参考轨迹（ground truth）。
+    - 解析任务名称，判断是否需要跳过（筛选）。
+    - 根据任务名称前缀确定任务类型。
+    - 构造任务提示（prompt）。
+    - 生成并返回一个 Task 实例，包含任务的各种信息。
+    返回：返回任务生成器和任务总数。
+
+    关键点/易错点
+    env.reset() 返回的是一个元组，注意解包和处理。
+    任务筛选通过 ids_to_run 实现，只有在列表中的任务才会被加载。
+    PREFIXES 用于根据任务名称前缀判断任务类型，若找不到会抛出断言错误。
+    该函数返回的是一个生成器对象（可迭代），而不是一次性加载所有任务。
+    
+    假如你只想加载 eval_out_of_distribution 集的部分任务，可以传入 split 和 ids_to_run_file 参数，函数会只生成这些任务的 Task 实例。"""
     @classmethod
     def load_tasks(cls, path: str = "./data/raw/alfworld", **kwargs) -> Iterable["Task"]:
         """Load alfworld data and prompts from a directory."""

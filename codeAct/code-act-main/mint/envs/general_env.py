@@ -31,6 +31,10 @@ INVALID_INPUT_MESSAGE = (
 
 # GeneralEnv：通用环境类，支持工具调用、反馈机制、任务判定等。
 class GeneralEnv(BaseEnv):
+    """
+    通用环境类，支持工具调用、反馈机制、任务判定等。
+    主要功能：环境初始化、工具集管理、动作解析、反馈获取、任务判定、状态管理、工具调用、答案判定、迭代控制。
+    """
     def __init__(
         self,
         task: Task,
@@ -40,6 +44,7 @@ class GeneralEnv(BaseEnv):
     ):
         """
         初始化 GeneralEnv 环境。
+        参数说明：
         - task: 任务对象。
         - tool_set: 工具列表。
         - feedback_config: 反馈相关配置。
@@ -55,7 +60,6 @@ class GeneralEnv(BaseEnv):
 
         self.state = State()
         self.config = environment_config
-
 
         # 反馈相关配置与 agent 初始化
         self.feedback_config = feedback_config
@@ -77,7 +81,6 @@ class GeneralEnv(BaseEnv):
             raise ValueError(
                 f"Invalid feedback type {self.feedback_config['pseudo_human_feedback']}"
             )
-
 
         self.env_outputs: List[StepOutput] = []  # 环境输出记录
         LOGGER.info(

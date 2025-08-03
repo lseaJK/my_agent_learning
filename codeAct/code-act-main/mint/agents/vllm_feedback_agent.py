@@ -13,7 +13,10 @@ LOGGER = logging.getLogger("MINT")
 
 
 class VLLMFeedbackAgent(OpenAILMAgent):
-    """Inference for open-sourced models with a unified interface with OpenAI's API."""
+    """
+    VLLM 反馈型 Agent，支持开源模型反馈，接口与 OpenAI API 兼容。
+    继承自 OpenAILMAgent，支持自定义 API 地址和关键字。
+    """
 
     def __init__(self, config):
         super().__init__(config)
@@ -22,13 +25,13 @@ class VLLMFeedbackAgent(OpenAILMAgent):
         ), "missing openai.api_base to connect to server"
         self.api_base = config["openai.api_base"]
         self.api_key = "EMPTY"
-        LOGGER.info("remember to openup the server following docs/SERVING.md")
+        LOGGER.info("记得根据 docs/SERVING.md 启动 VLLM 服务端")
 
         if "override" in config:
             self.assistant_keyword = config["override"].get("assistant", "Assistant")
             self.human_keyword = config["override"].get("human", "Human")
             LOGGER.info(
-                f"Overriding assistant/human keyword for the [Feedback Model] to {self.assistant_keyword}/{self.human_keyword}"
+                f"[Feedback Model] assistant/human 关键字已自定义为 {self.assistant_keyword}/{self.human_keyword}"
             )
         else:
             self.assistant_keyword = "Assistant"

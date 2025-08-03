@@ -29,19 +29,20 @@ sequenceDiagram
 此图为时序图，展示了 main.py 各模块间的调用与数据流动，适合理解交互过程。可用 Mermaid 工具可视化。
 
 
-# mint/envs 目录类继承关系与设计说明
 
-## 1. 继承关系概览
+# mint/envs 目录类继承关系与设计说明（详细注释版）
+
+## 1. 结构与继承关系
 ```
 base.py      -> class BaseEnv(ABC)
-                  |-- 定义所有环境的抽象基类，约定核心接口
+    |-- 环境抽象基类，约定必须实现 step 和 reset 两个方法。
 general_env.py -> class GeneralEnv(BaseEnv)
-                  |-- 通用环境实现，支持工具调用、反馈、任务判定等
+    |-- 通用环境类，支持工具调用、反馈机制、任务判定、状态管理等。
 alfworld_env.py -> class AlfworldEnv(GeneralEnv)
-                  |-- AlfWorld专用环境，扩展工具集与成功判定逻辑
+    |-- AlfWorld 专用环境类，扩展工具集与成功判定逻辑。
 ```
 
-## 2. 各类功能与主要方法
+## 2. 关键方法与功能说明
 
 ### BaseEnv (mint/envs/base.py)
 - 作用：所有环境的抽象基类，约定必须实现 `step` 和 `reset` 两个方法。
@@ -52,7 +53,7 @@ alfworld_env.py -> class AlfworldEnv(GeneralEnv)
 ### GeneralEnv (mint/envs/general_env.py)
 - 作用：实现通用任务环境，支持工具调用、反馈机制、任务判定、状态管理等。
 - 主要方法：
-  - `__init__`：环境初始化，绑定任务、工具集、反馈agent、配置等。
+  - `__init__`：环境初始化，绑定任务、工具集、反馈 agent、配置等。
   - `parse_action`：解析 agent 动作，区分答案型与工具调用型。
   - `get_feedback`：根据配置调用反馈 agent，获取反馈内容。
   - `check_task_success`：判定任务是否成功。
@@ -68,8 +69,8 @@ alfworld_env.py -> class AlfworldEnv(GeneralEnv)
 - 作用：针对 AlfWorld 任务的专用环境，扩展工具集与成功判定逻辑。
 - 主要方法：
   - `__init__`：初始化环境，扩展工具集，绑定底层环境，调用父类初始化。
-  - `check_task_success`：通过工具调用结果判定任务是否成功（覆盖父类）。
-  - `handle_tool_call`：处理工具调用，判定任务成功后自动终止（覆盖父类）。
+  - `check_task_success`：通过工具调用结果判定任务是否成功（可覆盖父类）。
+  - `handle_tool_call`：处理工具调用，判定任务成功后自动终止（可覆盖父类）。
 
 ## 3. 设计思路与调用流程
 - 统一接口：所有环境类都实现 `step` 和 `reset`，便于主流程统一调度。
@@ -86,47 +87,47 @@ alfworld_env.py -> class AlfworldEnv(GeneralEnv)
 - 任务结束后自动清理资源。
 
 
-
-# mint/agents 目录交互分析与理解指导
+# mint/agents 目录交互分析与理解指导（详细注释版）
 
 ## 1. 结构与继承关系
 ```
 base.py                -> class LMAgent
-                            |-- 所有智能体的基类，定义通用接口
+    |-- 智能体基类，定义通用接口和行为规范。
 openai_lm_agent.py     -> class OpenAILMAgent(LMAgent)
-                            |-- OpenAI大模型通用Agent
+    |-- OpenAI大模型 Agent，负责与 OpenAI API 交互。
 vllm_agent.py          -> class VLLMAgent(OpenAILMAgent)
-                            |-- VLLM推理框架Agent
+    |-- VLLM 推理 Agent，支持开源模型，接口与 OpenAI API 兼容。
 claude_agent.py        -> class ClaudeLMAgent(LMAgent)
-                            |-- Claude模型Agent
+    |-- Claude大模型 Agent，负责与 Anthropic Claude API 交互。
 bard_agent.py          -> class BardLMAgent(LMAgent)
-                            |-- Bard模型Agent
+    |-- Bard大模型 Agent，负责与 Google PaLM API 交互。
 openai_feedback_agent.py -> class OpenAIFeedbackAgent(OpenAILMAgent)
-                            |-- OpenAI反馈Agent
+    |-- OpenAI反馈型 Agent，专用于生成评估或反馈。
 claude_feedback_agent.py -> class ClaudeFeedbackAgent(OpenAILMAgent)
-                            |-- Claude反馈Agent
+    |-- Claude反馈型 Agent，专用于生成评估或反馈。
 vllm_feedback_agent.py   -> class VLLMFeedbackAgent(OpenAILMAgent)
-                            |-- VLLM反馈Agent
+    |-- VLLM反馈型 Agent，支持开源模型反馈。
 ```
 
 ## 2. 关键交互与数据流
-- agents 目录下所有 Agent 类都依赖 mint/datatypes.py 的 Action、State 数据结构。
-- Agent 的 `act(state)` 方法会接收环境（envs）传来的 State，并返回 Action，驱动主流程继续。
+- 所有 Agent 类都依赖 mint/datatypes.py 的 Action、State 数据结构。
+- Agent 的 `act(state)` 方法接收环境（envs）传来的 State，并返回 Action，驱动主流程继续。
 - Agent 的 `lm_output_to_action` 方法将底层大模型输出（如字符串）转为 Action，供环境和主流程使用。
-- 反馈型 Agent（如 OpenAIFeedbackAgent）会与环境的反馈机制协作，辅助评测和人类反馈模拟。
+- 反馈型 Agent（如 OpenAIFeedbackAgent、ClaudeFeedbackAgent、VLLMFeedbackAgent）会与环境的反馈机制协作，辅助评测和人类反馈模拟。
 - Agent 的初始化通常需要配置（config），这些配置由 main.py 主流程解析并传入。
 
-## 3. 与主流程的协作
-- main.py 初始化 Agent 时，会根据配置选择不同的 Agent 子类（如 OpenAILMAgent、VLLMAgent）。
-- 在每步交互中，main.py 会将当前 State 传给 Agent 的 `act` 方法，Agent 处理后返回 Action。
-- Action 对象会被传递给 envs 环境模块，驱动环境状态变更。
-- 反馈型 Agent 在需要评测或反馈时被调用，辅助主流程完成评测闭环。
+## 3. 主要方法说明
+- `__init__`：初始化 Agent，绑定配置参数，设置停用词，保证输出规范。
+- `act(state)`：Agent 的核心决策方法，输入为当前环境状态 State，输出为 Action。需在子类实现具体推理逻辑。
+- `call_lm(messages)`：调用底层大模型 API（如 OpenAI、Claude、Bard、VLLM），获取回复。
+- `lm_output_to_action(lm_output)`：将模型输出字符串转换为 Action 对象，区分工具调用和最终答案。
+- `add_system_message(messages)`：将用户消息中的 system prompt 拆分出来，作为系统消息，用于 prompt 工程。
 
-## 4. 如何理解和追踪 agents 交互
-- 追踪主流程时，关注 Agent 的 `act(state)` 如何根据 State 生成 Action。
-- 理解 Action/State 的结构和流动，有助于串联 agents、envs、tasks、tools 等模块的数据协作。
-- 关注 Agent 的底层实现（如 call_lm、format_prompt），可深入理解与大模型API的交互细节。
-- 反馈型 Agent 的 act 方法与环境的 get_feedback、handle_propose_solution 等方法协作，形成完整评测链路。
+## 4. 与主流程的协作
+- main.py 初始化 Agent 时，根据配置选择不同的 Agent 子类（如 OpenAILMAgent、VLLMAgent、ClaudeLMAgent、BardLMAgent）。
+- 每步交互中，main.py 将当前 State 传给 Agent 的 `act` 方法，Agent 处理后返回 Action。
+- Action 对象被传递给 envs 环境模块，驱动环境状态变更。
+- 反馈型 Agent 在需要评测或反馈时被调用，辅助主流程完成评测闭环。
 
 ## 5. 典型调用链
 - main.py -> Agent(act) -> Action -> Env(step) -> State -> Agent ...
@@ -134,4 +135,43 @@ vllm_feedback_agent.py   -> class VLLMFeedbackAgent(OpenAILMAgent)
 
 通过上述分析，你可以从 agents 目录出发，串联理解整个项目的数据流和模块协作，掌握主流程的核心驱动机制。
 
-如需进一步细化某个 Agent 类或方法的实现细节，请告知！
+# mint/tasks 目录类设计与交互分析（详细注释版）
+
+## 1. 结构与继承关系
+```
+base.py      -> class Task(ABC)
+    |-- 任务抽象基类，约定必须实现 get_prompt 方法。
+alfworld.py  -> class AlfWorldTask(Task)
+    |-- AlfWorld 专用任务类，封装环境与任务实例。
+```
+
+## 2. 主要方法与功能说明
+
+### Task (mint/tasks/base.py)
+- 作用：所有任务的抽象基类，约定必须实现 `get_prompt` 方法。
+- 主要属性：
+  - name: 任务名称。
+  - description: 任务描述。
+  - stop_conditions: 停止条件列表。
+- 主要方法：
+  - `get_prompt()`：返回任务的初始指令。
+
+### AlfWorldTask (mint/tasks/alfworld.py)
+- 作用：AlfWorld 专用任务类，继承自 Task。
+- 主要属性：
+  - id: 任务唯一标识。
+  - prompt: 任务指令。
+  - reference: 参考答案。
+  - env: AlfWorld 环境实例。
+  - task_type: 任务类型字符串。
+- 主要方法：
+  - `get_prompt()`：返回任务的初始指令。
+
+## 3. 设计思路与调用流程
+- 统一接口：所有任务类都实现 `get_prompt`，便于主流程统一调度。
+- 专用扩展：AlfWorldTask 针对特定任务扩展环境和判定逻辑。
+
+## 4. 典型调用思路
+- 主流程初始化任务（如 Task/AlfWorldTask），调用 `get_prompt` 获取初始指令。
+- 环境根据任务判定成功与否，驱动主流程。
+

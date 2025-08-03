@@ -20,6 +20,10 @@ class BardIssue(Exception):
 
 
 class BardLMAgent(LMAgent):
+    """
+    Bard 大模型 Agent，负责与 Google PaLM API 交互。
+    继承自 LMAgent，支持模型名自动补全和停用词设置。
+    """
     def __init__(self, config):
         super().__init__(config)
         assert "model_name" in config.keys()
@@ -28,6 +32,10 @@ class BardLMAgent(LMAgent):
             self.config["model_name"] = f"models/{self.config['model_name']}"
 
     def parse_bard_messages(self, messages: List[Mapping[str, str]]):
+        """
+        Bard API 消息格式化方法。
+        支持 system prompt 拆分和 author 字段转换。
+        """
         # Bard accepts messages as a list of strings
         if self.config.get("add_system_message", False):
             messages = self.add_system_message(messages)

@@ -9,13 +9,17 @@ LOGGER = logging.getLogger("MINT")
 
 
 class OpenAILMAgent(LMAgent):
+    """
+    OpenAI 大模型 Agent，负责与 OpenAI API 交互。
+    继承自 LMAgent，支持多轮对话和容错重试。
+    """
     def __init__(self, config):
         super().__init__(config)
         assert "model_name" in config.keys()
 
     @backoff.on_exception(
         backoff.fibo,
-        # https://platform.openai.com/docs/guides/error-codes/python-library-error-types
+        # 容错重试，处理 OpenAI API 的各种异常。
         (
             openai.error.APIError,
             openai.error.Timeout,
@@ -25,7 +29,10 @@ class OpenAILMAgent(LMAgent):
         ),
     )
     def call_lm(self, messages):
-        # Prepend the prompt with the system message
+        """
+        调用 OpenAI ChatCompletion API，获取模型回复。
+        支持自定义模型、温度、最大 token 等参数。
+        """
         response = openai.ChatCompletion.create(
             model=self.config["model_name"],
             messages=messages,
@@ -36,6 +43,11 @@ class OpenAILMAgent(LMAgent):
         return response.choices[0].message["content"], response["usage"]
 
     def act(self, state):
+        """
+        Agent 的核心推理方法。
+        输入为 State，输出为 Action。
+        先获取历史对话，调用 call_lm 得到回复。
+        """
         messages = state.history
         try:
             lm_output, token_usage = self.call_lm(messages)

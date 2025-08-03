@@ -19,6 +19,10 @@ headers = {
 
 
 class ClaudeLMAgent(LMAgent):
+    """
+    Claude 大模型 Agent，负责与 Anthropic Claude API 交互。
+    继承自 LMAgent，支持自定义停用词和模型参数。
+    """
     def __init__(self, config):
         super().__init__(config)
         assert "model_name" in config.keys()
@@ -30,11 +34,23 @@ class ClaudeLMAgent(LMAgent):
             "\n\nHuman:",
         ]
 
+    """
+    @backoff.on_exception( backoff.expo, requests.exceptions.RequestException, )
+    这是 Python 的装饰器注释，用于为 call_lm 方法添加“自动重试”机制。
+
+    当 call_lm 方法执行时，如果遇到 requests.exceptions.RequestException（即网络请求异常），会自动进行重试。
+    重试的时间间隔采用指数递增（expo，即 exponential backoff），每次失败后等待时间会越来越长，直到成功或达到最大重试次数。
+    这种写法常用于网络请求、API调用等容易因临时故障失败的场景，可以提升程序的健壮性和容错能力。
+    """
     @backoff.on_exception(
         backoff.expo,
         requests.exceptions.RequestException,
     )
     def call_lm(self, messages):
+        """
+        调用 Anthropic Claude API，获取模型回复。
+        支持自定义模型和停用词。
+        """
         # Prepend the prompt with the system message
         data = {
             "model": self.config["model_name"],
