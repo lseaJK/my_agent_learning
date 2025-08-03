@@ -85,4 +85,53 @@ alfworld_env.py -> class AlfworldEnv(GeneralEnv)
 - 工具调用和答案判定均有专门方法，便于扩展和覆盖。
 - 任务结束后自动清理资源。
 
-如需进一步细化某个类或方法的实现细节，请告知！
+
+
+# mint/agents 目录交互分析与理解指导
+
+## 1. 结构与继承关系
+```
+base.py                -> class LMAgent
+                            |-- 所有智能体的基类，定义通用接口
+openai_lm_agent.py     -> class OpenAILMAgent(LMAgent)
+                            |-- OpenAI大模型通用Agent
+vllm_agent.py          -> class VLLMAgent(OpenAILMAgent)
+                            |-- VLLM推理框架Agent
+claude_agent.py        -> class ClaudeLMAgent(LMAgent)
+                            |-- Claude模型Agent
+bard_agent.py          -> class BardLMAgent(LMAgent)
+                            |-- Bard模型Agent
+openai_feedback_agent.py -> class OpenAIFeedbackAgent(OpenAILMAgent)
+                            |-- OpenAI反馈Agent
+claude_feedback_agent.py -> class ClaudeFeedbackAgent(OpenAILMAgent)
+                            |-- Claude反馈Agent
+vllm_feedback_agent.py   -> class VLLMFeedbackAgent(OpenAILMAgent)
+                            |-- VLLM反馈Agent
+```
+
+## 2. 关键交互与数据流
+- agents 目录下所有 Agent 类都依赖 mint/datatypes.py 的 Action、State 数据结构。
+- Agent 的 `act(state)` 方法会接收环境（envs）传来的 State，并返回 Action，驱动主流程继续。
+- Agent 的 `lm_output_to_action` 方法将底层大模型输出（如字符串）转为 Action，供环境和主流程使用。
+- 反馈型 Agent（如 OpenAIFeedbackAgent）会与环境的反馈机制协作，辅助评测和人类反馈模拟。
+- Agent 的初始化通常需要配置（config），这些配置由 main.py 主流程解析并传入。
+
+## 3. 与主流程的协作
+- main.py 初始化 Agent 时，会根据配置选择不同的 Agent 子类（如 OpenAILMAgent、VLLMAgent）。
+- 在每步交互中，main.py 会将当前 State 传给 Agent 的 `act` 方法，Agent 处理后返回 Action。
+- Action 对象会被传递给 envs 环境模块，驱动环境状态变更。
+- 反馈型 Agent 在需要评测或反馈时被调用，辅助主流程完成评测闭环。
+
+## 4. 如何理解和追踪 agents 交互
+- 追踪主流程时，关注 Agent 的 `act(state)` 如何根据 State 生成 Action。
+- 理解 Action/State 的结构和流动，有助于串联 agents、envs、tasks、tools 等模块的数据协作。
+- 关注 Agent 的底层实现（如 call_lm、format_prompt），可深入理解与大模型API的交互细节。
+- 反馈型 Agent 的 act 方法与环境的 get_feedback、handle_propose_solution 等方法协作，形成完整评测链路。
+
+## 5. 典型调用链
+- main.py -> Agent(act) -> Action -> Env(step) -> State -> Agent ...
+- main.py -> FeedbackAgent(act) -> Action/反馈 -> Env/主流程
+
+通过上述分析，你可以从 agents 目录出发，串联理解整个项目的数据流和模块协作，掌握主流程的核心驱动机制。
+
+如需进一步细化某个 Agent 类或方法的实现细节，请告知！
