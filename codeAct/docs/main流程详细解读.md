@@ -10,19 +10,51 @@ sequenceDiagram
     main->>task: 加载任务配置
     main->>agent: 初始化 agent
     main->>tool: 初始化 tools
-    main->>env: 初始化环境
-    main->>env: env.reset()
-    env-->>main: 返回初始 state
-    loop 任务交互
-        main->>agent: act(state)
-        agent-->>main: 返回 action
-        main->>env: step(action)
-        env-->>main: 返回新 state
-        alt 有 Expert feedback
-            env-->>main: 返回反馈信息
+    loop 遍历任务列表
+        main->>task: 获取下一个 task
+        rect rgb(230, 250, 255)
+        main->>main: 调用 interactive_loop(task, agent, tools, ...)
+        main->>env: 初始化环境
+        main->>env: env.reset()
+        env-->>main: 返回初始 state
+        alt 有历史记录
+            loop 历史回放
+                main->>agent: lm_output_to_action(turn["lm_output"])
+                agent-->>main: 返回 action
+                main->>env: step(action, loaded=turn)
+                env-->>main: 返回新 state
+            end
+        end
+        loop 任务交互
+            alt 交互模式
+                main->>main: 询问用户是否继续 (y/n)
+            end
+            main->>agent: act(state)
+            agent-->>main: 返回 action
+            main->>env: step(action)
+            alt 动作类型判断
+                opt 超限/非法
+                    env-->>main: 返回 error
+                end
+                opt 工具调用型
+                    env->>tool: handle_tool_call(action)
+                    tool-->>env: 工具执行结果
+                    env-->>main: 返回观察结果
+                end
+                opt 答案型
+                    env->>env: handle_propose_solution(action)
+                    env-->>main: 判定任务成功与否
+                end
+            end
+            env->>agent: 获取反馈
+            env-->>main: 记录输出，返回新 state
+            alt 有 Expert feedback
+                env-->>main: 返回反馈信息
+            end
+        end
+        main->>task: 保存结果
         end
     end
-    main->>task: 保存结果
 ```
 
 ---
@@ -175,3 +207,47 @@ alfworld.py  -> class AlfWorldTask(Task)
 - 主流程初始化任务（如 Task/AlfWorldTask），调用 `get_prompt` 获取初始指令。
 - 环境根据任务判定成功与否，驱动主流程。
 
+# Agent 与 PythonTool 的交互机制说明
+
+1. **Agent 决策**  
+   Agent 在每一步交互中，根据当前环境状态（State）决定下一步动作（Action）。Action 可以是工具调用型（如调用 PythonTool），也可以是文本型答案。
+
+2. **Action 结构**  
+   当 Agent 需要调用工具时，会生成一个 Action，其中包含工具名称（如 `"python"`）和参数（如要执行的代码字符串）。
+
+3. **环境处理**  
+   环境（Env）在 `step(action)` 方法中解析 Action。如果 Action 是工具调用型，则会调用 `handle_tool_call` 方法。
+
+4. **工具调用**  
+   `handle_tool_call` 会根据 Action 中指定的工具名称，找到对应的 Tool 实例（如 PythonTool），并将参数（如代码字符串）传递给 Tool 的 `__call__` 方法。
+
+5. **PythonTool 执行**  
+   PythonTool 的 `__call__` 方法会调用 `python_executor.run(code)`，执行代码并返回结果。
+
+6. **结果返回**  
+   工具执行结果会被环境收集，作为 observation（观察结果）返回给 Agent，Agent 再根据新的 State 做下一步决策。
+
+**简化流程图：**
+
+```markdown
+agent.act(state) → Action（工具调用型） 
+env.step(Action) → handle_tool_call → tool.call(code)
+tool 执行并返回结果 → env 记录结果 → agent 获取新 state
+```
+## PythonTool 调用与执行时序交互图
+
+```mermaid
+sequenceDiagram
+    participant agent
+    participant env
+    participant PythonTool
+    participant PythonExecutor (utils.exec)
+    
+    %% agent 决策并生成工具调用型 Action
+    agent->>env: act(state) → Action(name="python", code="...")
+    env->>PythonTool: __call__(code)
+    PythonTool->>PythonExecutor: run(code)
+    PythonExecutor-->>PythonTool: 返回执行结果
+    PythonTool-->>env: 返回结果
+    env-->>agent: observation（工具执行结果）
+```

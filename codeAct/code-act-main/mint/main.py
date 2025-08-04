@@ -37,9 +37,11 @@ def interactive_loop(
         env = GeneralEnv(task, tools, feedback_config, env_config)
     state: State = env.reset()
 
-    init_msg = state.latest_output['content']
+    # 在交互模式下，省略消息中的“in-context example”部分，并用提示语替换。
+    init_msg = state.latest_output['content'] # 取出最近一次输出的内容，赋值给 init_msg。
     if interactive_mode:
         # omit in-context example
+        # 重新拼接消息：取分割后的第一个部分，加上提示语 "== In-context Example Omitted =="，再加上第三个部分（splited_msg[2]）。这样就把原本在 splited_msg[1] 里的内容（通常是 in-context example）省略掉了。
         splited_msg = init_msg.split("---")
         init_msg = splited_msg[0] + "== In-context Example Omitted ==" + splited_msg[2]
 
@@ -47,6 +49,10 @@ def interactive_loop(
 
     num_steps = 0
 
+  
+    # 如果之前任务有历史记录，则对每一个历史回合的大模型输出转换为动作对象，
+    # 如果输出包含 <solution>，则认为是最终答案动作，否则是工具调用动作。
+    # 执行动作并更新环境状态，把动作传给环境的 step 方法，并把当前历史回合 turn 作为参数。
     if task.loaded_history is not None:
         for turn in task.loaded_history:
             action = agent.lm_output_to_action(turn["lm_output"])
@@ -60,7 +66,7 @@ def interactive_loop(
             num_steps += 1
 
     while not state.finished:
-        # agent act
+        # 在交互模式下，提示用户是否继续
         if interactive_mode:
             to_continue = "n"
             while to_continue not in ["y", "Y"]:
@@ -76,7 +82,7 @@ def interactive_loop(
         # environment step
         state: State = env.step(action)
         # color the state in blue
-        if not state.finished:
+        if not state.finished: # 如果任务未结束，输出用户观察和反馈信息
             user_msg = state.latest_output['content']
             if "Expert feedback:" in user_msg:
                 obs, feedback = user_msg.split("Expert feedback:")
