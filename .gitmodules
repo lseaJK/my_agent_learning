@@ -1,3 +1,6 @@
 [submodule "codeAct"]
 	path = codeAct
 	url = git@github.com:lseaJK/codeAct.git
+[submodule "FinGenius"]
+	path = FinGenius
+	url = https://github.com/lseaJK/FinGenius.git
