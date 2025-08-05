@@ -1232,9 +1232,11 @@ def run_analysis():
         ui.show_progress("正在获取股票基本信息...")
 
         # Initialize state and get graph args
+        # 调用 create_initial_state 函数，创建一个包含所有智能体共享信息的初始“状态”字典。
         init_agent_state = graph.propagator.create_initial_state(
             selections["ticker"], selections["analysis_date"]
         )
+        # 调用 get_graph_args 函数，获取用于配置图（Graph）执行流程的参数。args: 这个变量存储了返回的配置字典，它将被传递给图的 stream 方法，从而在执行分析时应用这些配置。
         args = graph.propagator.get_graph_args()
 
         ui.show_success("数据获取准备完成")
