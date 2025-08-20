@@ -4,6 +4,3 @@
 [submodule "FinGenius"]
 	path = FinGenius
 	url = https://github.com/lseaJK/FinGenius.git
-[submodule "TradingAgents-CN"]
-	path = TradingAgents-CN
-	url = git@github.com:lseaJK/TradingAgents-CN.git
