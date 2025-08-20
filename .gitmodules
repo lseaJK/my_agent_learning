@@ -7,3 +7,4 @@
 [submodule "TradingAgents-CN"]
 	path = TradingAgents-CN
 	url = git@github.com:lseaJK/TradingAgents-CN.git
+	branch = master
