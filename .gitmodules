@@ -8,3 +8,6 @@
 	path = TradingAgents-CN
 	url = git@github.com:lseaJK/TradingAgents-CN.git
 	branch = master
+[submodule "MemoryOS_/memoryos"]
+	path = MemoryOS_/memoryos
+	url = ssh://git@ssh.github.com:443/lseaJK/MemoryOS_.git
