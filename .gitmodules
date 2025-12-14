@@ -14,3 +14,6 @@
 [submodule "deepwiki-open"]
 	path = deepwiki-open
 	url = https://github.com/AsyncFuncAI/deepwiki-open.git
+[submodule "PocketFlow"]
+	path = PocketFlow
+	url = https://github.com/lseaJK/PocketFlow_.git
