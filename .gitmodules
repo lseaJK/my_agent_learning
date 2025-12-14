@@ -11,3 +11,6 @@
 [submodule "MemoryOS_/memoryos"]
 	path = MemoryOS_/memoryos
 	url = ssh://git@ssh.github.com:443/lseaJK/MemoryOS_.git
+[submodule "deepwiki-open"]
+	path = deepwiki-open
+	url = https://github.com/AsyncFuncAI/deepwiki-open.git
