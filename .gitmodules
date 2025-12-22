@@ -17,3 +17,6 @@
 [submodule "PocketFlow"]
 	path = PocketFlow
 	url = https://github.com/lseaJK/PocketFlow_.git
+[submodule "langgraph"]
+	path = langgraph
+	url = https://github.com/langchain-ai/langgraph.git
